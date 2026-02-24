@@ -1,14 +1,35 @@
-# astrbot-plugin-helloworld
+# 🐱 AstrBot-Plugin-Mewgenics
 
-AstrBot 插件模板 / A template plugin for AstrBot plugin feature
+这是一个为 [AstrBot](https://github.com/Soulter/AstrBot) 开发的插件，专门用于快速查询《喵喵的结合》(Mewgenics) 的 Wiki 数据。
 
-> [!NOTE]
-> This repo is just a template of [AstrBot](https://github.com/AstrBotDevs/AstrBot) Plugin.
-> 
-> [AstrBot](https://github.com/AstrBotDevs/AstrBot) is an agentic assistant for both personal and group conversations. It can be deployed across dozens of mainstream instant messaging platforms, including QQ, Telegram, Feishu, DingTalk, Slack, LINE, Discord, Matrix, etc. In addition, it provides a reliable and extensible conversational AI infrastructure for individuals, developers, and teams. Whether you need a personal AI companion, an intelligent customer support agent, an automation assistant, or an enterprise knowledge base, AstrBot enables you to quickly build AI applications directly within your existing messaging workflows.
+## 🙏 特别致谢
 
-# Supports
+本插件的数据支持离不开 **Ocelot** 大佬制作的优秀图鉴网站。在此对 Ocelot 大佬的无私奉献表示衷心的感谢！
 
-- [AstrBot Repo](https://github.com/AstrBotDevs/AstrBot)
-- [AstrBot Plugin Development Docs (Chinese)](https://docs.astrbot.app/dev/star/plugin-new.html)
-- [AstrBot Plugin Development Docs (English)](https://docs.astrbot.app/en/dev/star/plugin-new.html)
+✨ **Wiki 网站地址**：[MewCodex (中文)](https://mewcodex.pages.dev/?lang=zh)
+
+---
+
+## ✨ 插件功能
+
+本插件通过对接 Wiki 数据，实现在聊天窗口内直接查询以下内容：
+
+* 📦 **物品**：查询各种道具的基础属性与效果。
+* 🧬 **突变**：获取猫猫突变后的形态与数值变化。
+* 🔥 **能力**：查看主动技能的具体数值与消耗。
+* 🛡️ **被动**：查询被动技能的触发条件与效果。
+* 👤 **角色**：查询各角色的基础数值与初始配置。
+
+---
+
+## 🎮 使用方式
+
+在聊天窗口使用以下格式进行查询：
+
+| 查询类别 | 指令格式 | 示例 |
+| :--- | :--- | :--- |
+| **查物品** | `查物品 [名称]` | `查物品 鱼骨头` |
+| **查突变** | `查突变 [名称]` | `查突变 尖牙` |
+| **查能力** | `查能力 [名称]` | `查能力 抓挠` |
+| **查被动** | `查被动 [名称]` | `查被动 强壮` |
+| **查角色** | `查角色 [名称]` | `查角色 默认猫` |
