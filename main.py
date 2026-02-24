@@ -1,4 +1,5 @@
 import os
+import uuid
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
@@ -22,61 +23,67 @@ class MewgenicsFinder(Star):
         )
 
         target_url = "https://mewcodex.pages.dev/?lang=zh"
-        save_path = f"{self.temp_dir}/{item_name}.png"
+        
+        # 使用 UUID 生成唯一文件名，杜绝路径遍历和并发冲突覆盖问题
+        safe_filename = f"{uuid.uuid4().hex}.png"
+        save_path = os.path.join(self.temp_dir, safe_filename)
 
         try:
             async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                page = await browser.new_page()
+                # 使用 async with 管理 browser，确保任何异常下都能正确释放浏览器进程资源
+                async with await p.chromium.launch(headless=True) as browser:
+                    page = await browser.new_page()
+                    await page.set_viewport_size({"width": 1400, "height": 900})
+                    await page.goto(target_url, wait_until="networkidle")
 
-                await page.set_viewport_size({"width": 1400, "height": 900})
-                await page.goto(target_url, wait_until="networkidle")
-
-                # 隐藏悬浮公告和语言切换
-                await page.add_style_tag(
-                    content="""
-                    #announcementModal, 
-                    .announcement-modal,
-                    .language-toggle { 
-                        display: none !important; 
-                    }
-                """
-                )
-
-                # 如果是查非“能力”的其他选项，先让浏览器点击顶部导航栏
-                if category != "能力":
-                    # 定位到 navbar 区域，并精准点击对应的文字标签
-                    await (
-                        page.locator(".navbar")
-                        .get_by_text(category, exact=True)
-                        .click()
-                    )
-                    # 稍微等半秒钟，让网页完成列表的切换渲染
-                    await page.wait_for_timeout(500)
-
-                # 后续逻辑保持不变：输入搜索 -> 找结果 -> 截图
-                await page.locator("#searchInput").fill(item_name)
-                await page.wait_for_timeout(800)
-
-                row_locator = page.locator(
-                    f"#tableBody tr:has-text('{item_name}')"
-                ).first
-
-                if await row_locator.count() > 0:
-                    await row_locator.screenshot(path=save_path)
-                    yield event.image_result(save_path)
-                else:
-                    yield event.plain_result(
-                        f"图鉴的【{category}】里似乎没有找到包含【{item_name}】的记录喵~"
+                    # 隐藏悬浮公告和语言切换
+                    await page.add_style_tag(
+                        content="""
+                        #announcementModal, 
+                        .announcement-modal,
+                        .language-toggle { 
+                            display: none !important; 
+                        }
+                        """
                     )
 
-                await browser.close()
+                    if category != "能力":
+                        # 定位到 navbar 区域并点击
+                        await page.locator(".navbar").get_by_text(category, exact=True).click()
+
+                    # 输入搜索内容
+                    await page.locator("#searchInput").fill(item_name)
+
+                    # 使用 Playwright 的内置 filter() 避免直接拼接入 CSS 选择器，防止选择器注入
+                    row_locator = page.locator("#tableBody tr").filter(has_text=item_name).first
+
+                    try:
+                        # 弃用 wait_for_timeout，改用状态驱动的显式等待
+                        await row_locator.wait_for(state="visible", timeout=3000)
+                        is_found = True
+                    except Exception:
+                        is_found = False
+
+                    if is_found:
+                        await row_locator.screenshot(path=save_path)
+                        yield event.image_result(save_path)
+                    else:
+                        yield event.plain_result(
+                            f"图鉴的【{category}】里似乎没有找到包含【{item_name}】的记录喵~"
+                        )
 
         except Exception as e:
-            logger.error(f"截图插件运行失败: {e}")
+            logger.error(f"Mewgenics截图插件运行失败: {e}")
             yield event.plain_result(
-                f"查询出错啦，可能是网络超时或容器环境问题。\n错误信息: {str(e)}"
+                "查询出错啦，可能是网络超时或服务器开小差了喵~ 请稍后再试！"
             )
+            
+        finally:
+            if os.path.exists(save_path):
+                try:
+                    os.remove(save_path)
+                except Exception as e:
+                    logger.error(f"清理临时文件失败: {e}")
 
     # ================= 下面是各个具体的指令入口 =================
 
